@@ -1,0 +1,6 @@
+# 배포·통합관리 연동 — JWT 필수
+
+app:
+  dev:
+    permit-api-without-auth: false
+    default-facility-id:

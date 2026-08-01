@@ -1,0 +1,13 @@
+---
+description: Spring Boot JPA·Querydsl — com/sch Entity 작성 규칙
+globs: backend/**/*.java
+alwaysApply: false
+---
+
+# Backend JPA 규칙
+
+- com 테이블 Entity는 **수정 최소화**; 일정 도메인 로직은 sch Entity·Service에 둔다.
+- `sch_service_schedules`: `schedule_kind` = `plan` | `claim` (별도 테이블 분리하지 않음).
+- 금액·등급·감경은 일정 row **스냅샷 컬럼**에 저장 (`grade_snapshot`, `reduction_snapshot`, …).
+- Repository: com은 `@Transactional(readOnly = true)` 조회 위주; sch는 CRUD·Querydsl Custom.
+- com/recipients 컬럼: `grade`, `reduction`, `cert_no`, `valid_from`, `valid_to` — 피그마 `Recipient` 필드명과 매핑 문서는 `database-integration` rule 참고.

@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: schedule
+
+  profiles:
+    default: dev
+
+  datasource:
+    url: jdbc:mariadb://localhost:3306/carenmct_schedule?useUnicode=true&characterEncoding=utf8
+    username: root
+    password: root
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    defer-datasource-initialization: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+
+  sql:
+    init:
+      mode: never
+
+  servlet:
+    multipart:
+      max-file-size: 30MB
+      max-request-size: 35MB
+
+server:
+  port: 8081
+  address: 0.0.0.0
+
+app:
+  cors:
+    # localhost / 127.0.0.1 / LAN(192.168.x.x) 프론트 dev(3001) 허용
+    allowed-origin-patterns: http://localhost:3001,http://127.0.0.1:3001,http://192.168.*.*:3001
+  jwt:
+    # 통합관리 포털(carenmct_common:8080)과 동일 — Base64 인코딩된 256bit+ 시크릿
+    secret: ${JWT_SECRET:bXlTdXBlclNlY3JldEtleUZvckpXVEF1dGgxMjM0NTY3ODkwMTIzNDU2Nzg5MA==}
+    issuer: ${JWT_ISSUER:carenmct-integrated}
+  datasource:
+    com:
+      jdbc-url: jdbc:mariadb://localhost:3306/carenmct_com?useUnicode=true&characterEncoding=utf8
+      username: root
+      password: root
+      driver-class-name: org.mariadb.jdbc.Driver
+
+logging:
+  level:
+    org.hibernate.SQL: debug

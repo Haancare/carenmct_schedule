@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-07-18T05:51:34" hostname="DESKTOP-9UC4O0A" time="0.217">
+  <properties/>
+  <testcase name="familyCare_60minutes_matchesGa2()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.177"/>
+  <testcase name="fullDayVisit_720minutes_matchesMa1()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.002"/>
+  <testcase name="visitBath_45minutes_appliesPartial80Percent()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.004"/>
+  <testcase name="fullDayVisit_under720minutes_rejected()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.018"/>
+  <testcase name="visitCare_480minutes_splitsTwo240()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.002"/>
+  <testcase name="familyCare_90minutes_matchesGa3()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.003"/>
+  <testcase name="visitCare_60minutes_matchesGa2()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.002"/>
+  <testcase name="visitCare_330minutes_splits240And90()" classname="com.carenmct.schedule.service.ScheduleFeeCalculatorTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

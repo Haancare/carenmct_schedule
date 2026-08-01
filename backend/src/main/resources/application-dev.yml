@@ -1,0 +1,8 @@
+# 로컬 개발 전용 — JWT 없이 API 테스트
+# 프로덕션/통합 연동 시: spring.profiles.active=prod
+
+app:
+  dev:
+    permit-api-without-auth: true
+    # com DB facilities.id — 환경변수 DEV_FACILITY_ID 로 덮어쓸 수 있음
+    default-facility-id: ${DEV_FACILITY_ID:}

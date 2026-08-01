@@ -1,0 +1,98 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.4'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.carenmct'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    querydsl.extendsFrom compileClasspath
+}
+
+repositories {
+    mavenCentral()
+}
+
+def querydslDir = layout.buildDirectory.dir("generated/querydsl")
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.1.0:jakarta'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'com.h2database:h2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir querydslDir
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    options.generatedSourceOutputDirectory.set(querydslDir)
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+clean {
+    delete querydslDir
+}
+
+tasks.register('initLocalDb', JavaExec) {
+    group = 'database'
+    description = 'Apply DDL and dev seed to local MariaDB (Phase 0)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.carenmct.schedule.support.InitLocalDb'
+    workingDir = projectDir
+}
+
+tasks.register('generateDevJwt', JavaExec) {
+    group = 'development'
+    description = 'Print a dev JWT for local API testing (facilityId=FAC-DEV-001)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.carenmct.schedule.support.DevJwtGenerator'
+}
+
+tasks.register('diagnoseDb', JavaExec) {
+    group = 'database'
+    description = 'Print SHOW CREATE TABLE for cross-schema FK debugging'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.carenmct.schedule.support.DbDiagnostic'
+    workingDir = projectDir
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-07-18T05:51:33" hostname="DESKTOP-9UC4O0A" time="0.887">
+  <properties/>
+  <testcase name="familyCare_isExcluded()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.807"/>
+  <testcase name="sunday_roundsOnesDigitToNearestTen()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.044"/>
+  <testcase name="fullDayVisit_holiday_applies50Percent()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.005"/>
+  <testcase name="roundOnesDigit_examples()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.001"/>
+  <testcase name="night_overlap_applies30PercentOnNightMinutesOnly()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.003"/>
+  <testcase name="calcNightOverlap_crossMidnight()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.002"/>
+  <testcase name="sunday_visitCare_480_chunks_roundPerSegment()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.005"/>
+  <testcase name="visitCare_grade5_isExcluded()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.002"/>
+  <testcase name="visitBath_isExcluded()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.002"/>
+  <testcase name="holiday_visitCare_chunks_sumPerSegmentNotOnTotal()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.002"/>
+  <testcase name="sunday_visitNursing_applies30Percent()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.001"/>
+  <testcase name="holiday_visitCare_applies50Percent()" classname="com.carenmct.schedule.service.ScheduleSurchargeCalculatorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build what is described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\Developer\AppData\Local\Temp\cursor-sandbox-cache\b257afc81f433d9af7eb45123c765a62\gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.15.11\a38b16385e867f59a641330f0362ebe742788ed8\byte-buddy-agent-1.15.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>

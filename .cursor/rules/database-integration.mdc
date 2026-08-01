@@ -1,0 +1,49 @@
+---
+description: 통합관리(com) DB와 일정관리(sch) DB 경계·참조 규칙
+alwaysApply: true
+---
+
+# 통합관리 DB ↔ 일정관리 DB
+
+## 스키마 단일 진실 원천 (SSOT)
+
+| 파일 | 역할 |
+|------|------|
+| `backend/src/main/resources/db/carenmct_com.sql` | 통합관리(업무포털) — **읽기 중심** 마스터 |
+| `backend/src/main/resources/db/carenmct_schedule.sql` | 일정관리 **전용 신규** 테이블만 (`sch_*`) |
+
+동일 MariaDB 인스턴스, **DB(스키마) 분리**:
+- **`carenmct_com`** — 통합관리(com Entity, `hibernate.hbm2ddl.auto=none`)
+- **`carenmct_schedule`** — 일정관리(sch Entity, primary DataSource)
+
+## com 테이블 (참조만 — Entity는 com 패키지)
+
+`facilities`, `users`, `employees`, `recipients`, `recipient_services`, `recipient_guardians`, `recipient_assigned_workers`, **`recipient_memos`**, `groups`, `group_members`, `holidays`, `job_codes`
+
+- 수급자·직원·기관 CRUD는 일정관리에서 **새로 만들지 않음** (조회·FK 연결).
+- 수급자 메모 → **`recipient_memos`** (`service_month`로 연월 필터). `sch_recipient_day_memos` 같은 중복 테이블 **금지**.
+
+## sch 테이블 (일정관리 쓰기)
+
+`sch_service_schedules`(plan/claim=`schedule_kind`), `sch_recipient_service_workers`, `sch_copay_confirmations`(세그먼트=`period_key`), `sch_non_benefit_*`, `sch_non_benefit_facility_categories`, `sch_consultation_visits`, `sch_work_journals`, `sch_assessment_documents`, `sch_import_batches`, `sch_annual_*` 등 — DDL 파일 참조.
+
+## Entity·패키지 규칙
+
+```
+com.carenmct.schedule.domain.com.*     → com 테이블 (Recipient, Employee, Facility …)
+com.carenmct.schedule.domain.schedule.* → sch_* 테이블
+```
+
+- com Entity: `@Table(catalog = ComDatabaseCatalog.NAME, name = "...")` — **`carenmct_com`**
+- sch FK: `recipient_id` → `recipients.id`, `facility_id` → `facilities.id`, `employee_id` → `employees.id`.
+- `service_type` 코드: `visit_care`, `visit_bath`, `visit_nursing`, `day_care`, `family_care`, `full_day_visit` (com `recipient_services` 한글명과 앱에서 매핑).
+
+## 인증
+
+자체 로그인 없음. 통합관리 JWT 검증 후 `SecurityContext` 사용.
+
+## 작업 전 체크
+
+1. 새 테이블이 com에 이미 있는지 `carenmct_com.sql` 검색
+2. sch DDL에만 추가할지 판단
+3. 피그마 UI는 `frontend/src/figma_design/` 참고

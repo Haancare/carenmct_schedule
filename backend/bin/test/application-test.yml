@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:schedule;MODE=MariaDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: never
+
+app:
+  jwt:
+    secret: test-secret-key-must-be-at-least-256-bits-long-for-hmac
+    issuer: carenmct-integrated
+  datasource:
+    com:
+      jdbc-url: jdbc:h2:mem:carenmct_com;MODE=MariaDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      username: sa
+      password:
+      driver-class-name: org.h2.Driver
