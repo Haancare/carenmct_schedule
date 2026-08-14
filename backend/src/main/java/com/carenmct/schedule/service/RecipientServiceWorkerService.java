@@ -1,18 +1,26 @@
 package com.carenmct.schedule.service;
 
+import com.carenmct.schedule.domain.com.Employee;
+import com.carenmct.schedule.domain.com.RecipientFamilyWorker;
 import com.carenmct.schedule.domain.schedule.RecipientServiceWorker;
 import com.carenmct.schedule.domain.schedule.enums.ServiceType;
+import com.carenmct.schedule.dto.scheduleassignment.RecipientFamilyWorkerDto;
 import com.carenmct.schedule.dto.scheduleassignment.RecipientServiceWorkerItemDto;
 import com.carenmct.schedule.dto.scheduleassignment.RecipientServiceWorkersResponse;
 import com.carenmct.schedule.dto.scheduleassignment.ReplaceRecipientServiceWorkersRequest;
 import com.carenmct.schedule.repository.com.ComEmployeeRepository;
+import com.carenmct.schedule.repository.com.ComRecipientFamilyWorkerRepository;
 import com.carenmct.schedule.repository.com.ComRecipientRepository;
 import com.carenmct.schedule.repository.schedule.RecipientServiceWorkerRepository;
 import com.carenmct.schedule.security.FacilityScopeResolver;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,6 +35,7 @@ public class RecipientServiceWorkerService {
     private final RecipientServiceWorkerRepository workerRepository;
     private final ComRecipientRepository recipientRepository;
     private final ComEmployeeRepository employeeRepository;
+    private final ComRecipientFamilyWorkerRepository familyWorkerRepository;
     private final FacilityScopeResolver facilityScope;
 
     @Transactional(readOnly = true, transactionManager = "scheduleTransactionManager")
@@ -39,6 +48,43 @@ public class RecipientServiceWorkerService {
                 .map(this::toDto)
                 .toList();
         return new RecipientServiceWorkersResponse(items);
+    }
+
+    /** 통합관리 `recipient_family_workers` — 가족요양 자동선택용 */
+    @Transactional(readOnly = true, transactionManager = "comTransactionManager")
+    public List<RecipientFamilyWorkerDto> listFamilyWorkers(String recipientId) {
+        String facilityId = facilityScope.requireFacilityId();
+        long recipientLongId = parseRecipientId(recipientId);
+        recipientRepository
+                .findByIdAndFacility_Id(recipientLongId, facilityId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipient not found"));
+
+        List<RecipientFamilyWorker> rows =
+                familyWorkerRepository.findByRecipientIdOrderBySelfCopayDeductionDescIdAsc(recipientLongId);
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> empIds = rows.stream()
+                .map(RecipientFamilyWorker::getEmployeeId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, String> names = new HashMap<>();
+        if (!empIds.isEmpty()) {
+            for (Employee e :
+                    employeeRepository.findByIdInAndFacility_IdAndDeletedAtIsNull(empIds, facilityId)) {
+                names.put(e.getId(), e.getName());
+            }
+        }
+
+        return rows.stream()
+                .filter(r -> names.containsKey(r.getEmployeeId()))
+                .map(r -> new RecipientFamilyWorkerDto(
+                        String.valueOf(r.getEmployeeId()),
+                        names.get(r.getEmployeeId()),
+                        r.getFamilyRelation(),
+                        Boolean.TRUE.equals(r.getSelfCopayDeduction())))
+                .toList();
     }
 
     @Transactional(transactionManager = "scheduleTransactionManager")

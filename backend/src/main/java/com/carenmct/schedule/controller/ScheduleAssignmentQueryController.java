@@ -6,6 +6,7 @@ import com.carenmct.schedule.dto.scheduleassignment.ScheduleFeeQuoteRequest;
 import com.carenmct.schedule.dto.holiday.HolidayDto;
 import com.carenmct.schedule.dto.scheduleassignment.CreateRecipientMemoRequest;
 import com.carenmct.schedule.dto.scheduleassignment.RecipientMemoDto;
+import com.carenmct.schedule.dto.scheduleassignment.RecipientFamilyWorkerDto;
 import com.carenmct.schedule.dto.scheduleassignment.RecipientServiceWorkersResponse;
 import com.carenmct.schedule.dto.scheduleassignment.ReplaceRecipientServiceWorkersRequest;
 import com.carenmct.schedule.dto.scheduleassignment.ScheduleAssignmentListQuery;
@@ -90,6 +91,11 @@ public class ScheduleAssignmentQueryController {
     @GetMapping("/{recipientId}/service-workers")
     public RecipientServiceWorkersResponse listServiceWorkers(@PathVariable String recipientId) {
         return recipientServiceWorkerService.list(recipientId);
+    }
+
+    @GetMapping("/{recipientId}/family-workers")
+    public List<RecipientFamilyWorkerDto> listFamilyWorkers(@PathVariable String recipientId) {
+        return recipientServiceWorkerService.listFamilyWorkers(recipientId);
     }
 
     @PutMapping("/{recipientId}/service-workers")

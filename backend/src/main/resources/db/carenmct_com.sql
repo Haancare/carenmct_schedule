@@ -12,7 +12,7 @@
 --   3. 사용자       : users → user_permissions
 --   4. 수급자       : recipients → 연관 테이블 → recipient_import_staging
 --   5. 직원         : employees → 연관 테이블
---   6. 수급자↔직원  : recipient_assigned_workers  (양쪽 모두 생성 후)
+--   6. 수급자↔직원  : recipient_assigned_workers, recipient_family_workers (양쪽 모두 생성 후)
 --   7. 그룹         : groups → group_subgroups → group_members
 --   8. 업무/메모    : schedule_memos, todo_memos
 --   9. 카카오       : kakao_templates → kakao_send_logs → kakao_send_recipients
@@ -173,6 +173,13 @@ CREATE TABLE IF NOT EXISTS facilities (
     svc_tax              TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '세무대행 여부',
     svc_insurance        TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '4대대행 여부',
     svc_finance          TINYINT(1)   NOT NULL DEFAULT 0  COMMENT '재무대행 여부',
+    report_withholding   VARCHAR(10)  NOT NULL DEFAULT '대상' COMMENT '원천세신고: 대상|종결',
+    report_year_end      VARCHAR(10)  NOT NULL DEFAULT '대상' COMMENT '연말정산신고: 대상|종결',
+    report_health_pay    VARCHAR(10)  NOT NULL DEFAULT '대상' COMMENT '건강보수신고: 대상|종결',
+    report_employ_pay    VARCHAR(10)  NOT NULL DEFAULT '대상' COMMENT '고용산재보수신고: 대상|종결',
+    cert_name            VARCHAR(100) NULL                COMMENT '공인인증서명',
+    cert_password        VARCHAR(255) NULL                COMMENT '공인인증서 비밀번호',
+    cert_expiry          DATE         NULL                COMMENT '공인인증서 만료일',
     tax_invoice_email    VARCHAR(100) NULL                COMMENT '전자세금계산서 수신 이메일',
     created_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     updated_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
@@ -302,7 +309,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     PRIMARY KEY (id),
-    UNIQUE KEY uq_users_facility_user (facility_id, user_id),
+    UNIQUE KEY uq_users_facility_user_id (facility_id, user_id),
     KEY idx_users_facility (facility_id),
     CONSTRAINT fk_users_facility FOREIGN KEY (facility_id) REFERENCES facilities (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 계정';
@@ -332,7 +339,7 @@ CREATE TABLE IF NOT EXISTS recipients (
     name                 VARCHAR(50)  NOT NULL COMMENT '수급자명',
     alias                VARCHAR(50)  NULL     COMMENT '별칭',
     legal_dob            DATE         NOT NULL COMMENT '법정생년월일',
-    gender               CHAR(1)      NOT NULL COMMENT '성별: 남|여',
+    gender               CHAR(1)      NULL     COMMENT '성별: 남|여 (일괄등록 시 null 가능)',
     real_dob             DATE         NULL     COMMENT '실제생일',
     real_dob_type        CHAR(1)      NULL DEFAULT '양' COMMENT '실제생일 유형: 양|음',
     cert_no              VARCHAR(30)  NULL     COMMENT '장기요양인정번호',
@@ -495,7 +502,7 @@ CREATE TABLE IF NOT EXISTS employees (
     photo_url           VARCHAR(500) NULL COMMENT '증명사진 URL',
     department          VARCHAR(20)  NULL     COMMENT '소속사업: 방문요양|방문목욕|방문간호|주간보호|행정',
     role                VARCHAR(10)  NULL     COMMENT '직책: 팀장|직원',
-    position            VARCHAR(10)  NULL     COMMENT '직종코드 (ST_01 등)',
+    position            VARCHAR(50)  NULL     COMMENT '직종명 (시설장(관리책임자)|요양보호사 등 UI 노출명)',
     status              VARCHAR(10)  NOT NULL DEFAULT '재직' COMMENT '재직상태: 재직|퇴직|휴직',
     hire_date           DATE         NULL COMMENT '입사일',
     retire_date         DATE         NULL COMMENT '퇴사일',
@@ -614,7 +621,9 @@ CREATE TABLE IF NOT EXISTS employee_salary_by_year (
     weekly_holiday_pay  INT          NULL DEFAULT 0 COMMENT '주휴수당',
     annual_leave_pay    INT          NULL DEFAULT 0 COMMENT '연차수당',
     meal_allowance      INT          NULL DEFAULT 0 COMMENT '식대',
+    meal_allowance_enabled TINYINT(1) NOT NULL DEFAULT 0 COMMENT '시간제 식대 적용 여부',
     transport_allowance INT          NULL DEFAULT 0 COMMENT '차량보조비',
+    transport_allowance_enabled TINYINT(1) NOT NULL DEFAULT 0 COMMENT '시간제 차량보조비 적용 여부',
     other_allowance     INT          NULL DEFAULT 0 COMMENT '기타수당',
     created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     updated_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
@@ -657,6 +666,24 @@ CREATE TABLE IF NOT EXISTS recipient_assigned_workers (
     CONSTRAINT fk_raw_recipient FOREIGN KEY (recipient_id) REFERENCES recipients (id) ON DELETE CASCADE,
     CONSTRAINT fk_raw_employee  FOREIGN KEY (employee_id)  REFERENCES employees (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='수급자-담당요양보호사 연결';
+
+
+-- 가족관계 요양보호사 (recipient_family_workers)
+--   FamilyCarerTab: 수급자-직원 가족관계 + 본인부담금 공제(수급자당 1명)
+CREATE TABLE IF NOT EXISTS recipient_family_workers (
+    id                   BIGINT      NOT NULL AUTO_INCREMENT COMMENT '기본키',
+    recipient_id         BIGINT      NOT NULL COMMENT '수급자 FK',
+    employee_id          BIGINT      NOT NULL COMMENT '직원(요양보호사) FK',
+    family_relation      VARCHAR(30) NOT NULL COMMENT '가족관계: 처|남편|자|자부|사위|형제자매|손|배우자의형제자매|외손|부모|기타|친족',
+    self_copay_deduction TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '본인부담금 공제 대상 여부 (수급자당 최대 1명)',
+    created_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    updated_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_rfw (recipient_id, employee_id),
+    KEY idx_rfw_recipient (recipient_id),
+    CONSTRAINT fk_rfw_recipient FOREIGN KEY (recipient_id) REFERENCES recipients (id) ON DELETE CASCADE,
+    CONSTRAINT fk_rfw_employee  FOREIGN KEY (employee_id)  REFERENCES employees (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='수급자-가족관계 요양보호사';
 
 
 -- ============================================================
@@ -987,6 +1014,23 @@ CREATE TABLE IF NOT EXISTS notice_read_status (
     CONSTRAINT fk_nrs_facility FOREIGN KEY (facility_id) REFERENCES facilities (id),
     CONSTRAINT fk_nrs_user     FOREIGN KEY (user_id)     REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='공지사항 읽음 상태';
+
+
+-- ============================================================
+-- SSO 일회용 인증 코드 (외부 시스템 연동)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS sso_auth_codes (
+    id            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '기본키',
+    code          VARCHAR(64) NOT NULL                COMMENT '일회용 SSO 코드',
+    user_id       BIGINT      NOT NULL                COMMENT '사용자 FK',
+    target_system VARCHAR(30) NOT NULL                COMMENT '대상 시스템 ID (schedule, payroll 등)',
+    used          TINYINT(1)  NOT NULL DEFAULT 0      COMMENT '사용 여부',
+    expires_at    DATETIME    NOT NULL                COMMENT '만료일시',
+    created_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+    PRIMARY KEY (id),
+    UNIQUE KEY idx_sso_code (code),
+    CONSTRAINT fk_sso_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SSO 일회용 인증 코드';
 
 
 SET FOREIGN_KEY_CHECKS = 1;

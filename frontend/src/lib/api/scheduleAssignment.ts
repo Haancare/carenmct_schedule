@@ -677,6 +677,24 @@ export async function fetchRecipientServiceWorkers(
   return data.items ?? [];
 }
 
+export type RecipientFamilyWorkerDto = {
+  employeeId: string;
+  employeeName: string;
+  familyRelation: string;
+  selfCopayDeduction: boolean;
+};
+
+/** 통합관리 recipient_family_workers — 가족요양 자동선택 */
+export async function fetchRecipientFamilyWorkers(
+  recipientId: string,
+): Promise<RecipientFamilyWorkerDto[]> {
+  if (!USE_PAYMENT_API) return [];
+  const { data } = await apiClient.get<RecipientFamilyWorkerDto[]>(
+    `/api/schedule-assignment/${recipientId}/family-workers`,
+  );
+  return data ?? [];
+}
+
 export async function replaceRecipientServiceWorkers(
   recipientId: string,
   items: RecipientServiceWorkerItem[],

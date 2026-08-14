@@ -15,6 +15,7 @@ import type {
   ScheduleAssignmentEntry,
   ScheduleAssignmentRecipient,
 } from "@/lib/api/scheduleAssignment.types";
+import { fetchRecipientFamilyWorkers } from "@/lib/api/scheduleAssignment";
 
 import {
   BATH_TYPE_OPTIONS,
@@ -414,6 +415,48 @@ export default function ScheduleAddPanel({
                     familyRelation: "",
                     ...(defaults ?? {}),
                   }));
+                  if (serviceType !== "family_care") return;
+                  void fetchRecipientFamilyWorkers(recipient.id).then((rows) => {
+                    const preferred = rows[0];
+                    if (!preferred?.employeeId) return;
+                    const empId = preferred.employeeId;
+                    const relation = preferred.familyRelation || "";
+                    updateForm((f) => {
+                      if (f.serviceType !== "family_care" || f.careWorkerId) {
+                        return f;
+                      }
+                      return {
+                        ...f,
+                        careWorkerId: empId,
+                        familyRelation: relation,
+                      };
+                    });
+                    setAssignedWorkerMap((prevWorkers) => {
+                      const list = prevWorkers.family_care ?? [];
+                      const nextWorkers = {
+                        ...prevWorkers,
+                        family_care: list.includes(empId)
+                          ? list
+                          : [...list, empId],
+                      };
+                      setFamilyRelationMap((prevRel) => {
+                        const nextRel = relation
+                          ? { ...prevRel, [empId]: relation }
+                          : prevRel;
+                        void saveAssignedWorkers(
+                          recipient.id,
+                          nextWorkers,
+                          nextRel,
+                        ).catch(() => {
+                          window.alert(
+                            "담당 요양보호사 저장에 실패했습니다.",
+                          );
+                        });
+                        return nextRel;
+                      });
+                      return nextWorkers;
+                    });
+                  });
                 }}
                 style={{
                   fontSize: 11,
