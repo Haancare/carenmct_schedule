@@ -69,6 +69,60 @@ public class AnnualFeeRateItem {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder;
 
+    public static AnnualFeeRateItem create(
+            String feeCode,
+            String label,
+            Integer amount,
+            int minMinutes,
+            Integer maxMinutes,
+            boolean maxInclusive,
+            boolean applyFamily,
+            Integer grade1Amount,
+            Integer grade2Amount,
+            Integer grade3Amount,
+            Integer grade4Amount,
+            Integer grade5Amount,
+            Integer gradeCognitiveAmount) {
+        AnnualFeeRateItem item = new AnnualFeeRateItem();
+        item.feeCode = feeCode;
+        item.label = label;
+        item.amount = amount;
+        item.minMinutes = minMinutes;
+        item.maxMinutes = maxMinutes;
+        item.maxInclusive = maxInclusive;
+        item.applyFamily = applyFamily;
+        item.grade1Amount = grade1Amount;
+        item.grade2Amount = grade2Amount;
+        item.grade3Amount = grade3Amount;
+        item.grade4Amount = grade4Amount;
+        item.grade5Amount = grade5Amount;
+        item.gradeCognitiveAmount = gradeCognitiveAmount;
+        item.sortOrder = 0;
+        return item;
+    }
+
+    void attach(AnnualFeeRateServiceHeader header, int sortOrder) {
+        this.header = header;
+        this.sortOrder = sortOrder;
+    }
+
+    public AnnualFeeRateItem copy() {
+        return create(
+                feeCode,
+                label,
+                amount,
+                minMinutes != null ? minMinutes : 0,
+                maxMinutes,
+                Boolean.TRUE.equals(maxInclusive),
+                Boolean.TRUE.equals(applyFamily),
+                grade1Amount,
+                grade2Amount,
+                grade3Amount,
+                grade4Amount,
+                grade5Amount,
+                gradeCognitiveAmount);
+    }
+
     public boolean matchesDuration(int durationMinutes) {
         if (durationMinutes < minMinutes) {
             return false;

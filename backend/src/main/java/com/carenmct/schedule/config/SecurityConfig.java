@@ -1,6 +1,7 @@
 package com.carenmct.schedule.config;
 
 import com.carenmct.schedule.security.JwtAuthenticationFilter;
+import com.carenmct.schedule.security.JwtClaimSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +34,10 @@ public class SecurityConfig {
                     if (devMode.permitApiWithoutAuth()) {
                         auth.requestMatchers("/api/**").permitAll();
                     } else {
+                        // 관리자 API — 관리자 SSO (ROLE_ADMIN_SYSTEM) 만
+                        auth.requestMatchers("/api/admin/**")
+                                .hasAuthority(JwtClaimSupport.ROLE_ADMIN_SYSTEM);
+                        // 기관 API — 기관 포털 JWT
                         auth.requestMatchers("/api/**").authenticated();
                     }
 

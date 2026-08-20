@@ -55,7 +55,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           로그인이 필요합니다
         </div>
         <p style={{ fontSize: 13, color: "#64748b", margin: 0, lineHeight: 1.6 }}>
-          통합관리 포털에서 본인부담금·일정관리 메뉴를 통해
+          통합관리 포털에서 급여제공(일정)관리 메뉴를 통해
           <br />
           다시 이동해 주세요.
         </p>

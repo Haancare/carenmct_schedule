@@ -59,4 +59,64 @@ public class AnnualFeeRateServiceHeader {
     @OneToMany(mappedBy = "header", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
     private List<AnnualFeeRateItem> items = new ArrayList<>();
+
+    public static AnnualFeeRateServiceHeader create(
+            int benefitYear,
+            ServiceType serviceType,
+            String note,
+            Integer partialMinMinutes,
+            Integer partialMaxMinutes,
+            BigDecimal partialRate) {
+        LocalDateTime now = LocalDateTime.now();
+        AnnualFeeRateServiceHeader header = new AnnualFeeRateServiceHeader();
+        header.benefitYear = benefitYear;
+        header.serviceType = serviceType;
+        header.note = note;
+        header.partialMinMinutes = partialMinMinutes;
+        header.partialMaxMinutes = partialMaxMinutes;
+        header.partialRate = partialRate;
+        header.createdAt = now;
+        header.updatedAt = now;
+        return header;
+    }
+
+    public void updateMeta(
+            String note,
+            Integer partialMinMinutes,
+            Integer partialMaxMinutes,
+            BigDecimal partialRate) {
+        this.note = note;
+        this.partialMinMinutes = partialMinMinutes;
+        this.partialMaxMinutes = partialMaxMinutes;
+        this.partialRate = partialRate;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void replaceItems(List<AnnualFeeRateItem> nextItems) {
+        this.items.clear();
+        if (nextItems != null) {
+            int order = 0;
+            for (AnnualFeeRateItem item : nextItems) {
+                item.attach(this, order++);
+                this.items.add(item);
+            }
+        }
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public AnnualFeeRateServiceHeader copyToYear(int newYear) {
+        AnnualFeeRateServiceHeader copy = create(
+                newYear,
+                this.serviceType,
+                this.note,
+                this.partialMinMinutes,
+                this.partialMaxMinutes,
+                this.partialRate);
+        List<AnnualFeeRateItem> copiedItems = new ArrayList<>();
+        for (AnnualFeeRateItem item : this.items) {
+            copiedItems.add(item.copy());
+        }
+        copy.replaceItems(copiedItems);
+        return copy;
+    }
 }

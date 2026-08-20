@@ -14,11 +14,13 @@ public record JwtUserPrincipal(
         String loginId,
         String name,
         String email,
-        String facilityId) implements UserDetails {
+        String facilityId,
+        boolean adminSystem,
+        String dept,
+        String title) implements UserDetails {
 
     private static final String NAME_CLAIM = "name";
     private static final String EMAIL_CLAIM = "email";
-    private static final String FACILITY_ID_CLAIM = "facilityId";
 
     public static JwtUserPrincipal from(User user) {
         return new JwtUserPrincipal(
@@ -26,7 +28,10 @@ public record JwtUserPrincipal(
                 user.getLoginId(),
                 user.getName(),
                 user.getEmail(),
-                user.getFacilityId());
+                user.getFacilityId(),
+                false,
+                null,
+                null);
     }
 
     public static JwtUserPrincipal fromClaims(String loginId, Claims claims) {
@@ -47,13 +52,25 @@ public record JwtUserPrincipal(
             email = loginId + "@external.local";
         }
 
-        String facilityId = JwtClaimSupport.resolveFacilityId(claims);
+        boolean adminSystem = JwtClaimSupport.isAdminSystem(claims);
+        String facilityId = adminSystem ? null : JwtClaimSupport.resolveFacilityId(claims);
 
-        return new JwtUserPrincipal(null, loginId, name, email, facilityId);
+        return new JwtUserPrincipal(
+                null,
+                loginId,
+                name,
+                email,
+                facilityId,
+                adminSystem,
+                JwtClaimSupport.resolveDept(claims),
+                JwtClaimSupport.resolveTitle(claims));
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (adminSystem) {
+            return List.of(new SimpleGrantedAuthority(JwtClaimSupport.ROLE_ADMIN_SYSTEM));
+        }
         return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 

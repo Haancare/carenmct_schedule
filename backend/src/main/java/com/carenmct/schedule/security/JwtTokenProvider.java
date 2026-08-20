@@ -48,6 +48,10 @@ public class JwtTokenProvider {
                         "missing_subject", "JWT 에 sub/userId/loginId 가 없습니다.");
             }
 
+            if (JwtClaimSupport.isAdminSystem(claims)) {
+                return JwtValidationResult.okAdmin(tokenIssuer);
+            }
+
             String facilityId = JwtClaimSupport.resolveFacilityId(claims);
             if (!StringUtils.hasText(facilityId)) {
                 return JwtValidationResult.fail(
@@ -68,9 +72,14 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
         String loginId = JwtClaimSupport.resolveLoginId(claims);
-        String facilityId = JwtClaimSupport.resolveFacilityId(claims);
         JwtUserPrincipal fromClaims = JwtUserPrincipal.fromClaims(loginId, claims);
 
+        if (fromClaims.adminSystem()) {
+            return new UsernamePasswordAuthenticationToken(
+                    fromClaims, token, fromClaims.getAuthorities());
+        }
+
+        String facilityId = fromClaims.facilityId();
         JwtUserPrincipal principal =
                 StringUtils.hasText(facilityId)
                         ? comUserRepository
@@ -89,7 +98,15 @@ public class JwtTokenProvider {
                 ? fromClaims.facilityId()
                 : user.getFacilityId();
         String name = StringUtils.hasText(fromClaims.name()) ? fromClaims.name() : user.getName();
-        return new JwtUserPrincipal(user.getId(), user.getLoginId(), name, user.getEmail(), facilityId);
+        return new JwtUserPrincipal(
+                user.getId(),
+                user.getLoginId(),
+                name,
+                user.getEmail(),
+                facilityId,
+                false,
+                fromClaims.dept(),
+                fromClaims.title());
     }
 
     private Claims parseClaims(String token) {
@@ -106,14 +123,23 @@ public class JwtTokenProvider {
     }
 
     public record JwtValidationResult(
-            boolean valid, String reasonCode, String message, String facilityId, String issuer) {
+            boolean valid,
+            String reasonCode,
+            String message,
+            String facilityId,
+            String issuer,
+            boolean adminSystem) {
 
         static JwtValidationResult ok(String facilityId, String issuer) {
-            return new JwtValidationResult(true, "ok", "ok", facilityId, issuer);
+            return new JwtValidationResult(true, "ok", "ok", facilityId, issuer, false);
+        }
+
+        static JwtValidationResult okAdmin(String issuer) {
+            return new JwtValidationResult(true, "ok", "ok", null, issuer, true);
         }
 
         static JwtValidationResult fail(String reasonCode, String message) {
-            return new JwtValidationResult(false, reasonCode, message, null, null);
+            return new JwtValidationResult(false, reasonCode, message, null, null, false);
         }
     }
 }
